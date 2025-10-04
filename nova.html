@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>NovaRecipes+ — Smart Food Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Space+Grotesk:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg1:#071129; --bg2:#0f172a; --card:#0b1220;
+  --accent1:#06b6d4; --accent2:#7c3aed; --muted:rgba(230,240,255,0.7);
+  --heart:#ff6b81;
+  --shadow:0 8px 32px 0 rgba(31,38,135,0.37);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:'Inter',system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial;
+  background:linear-gradient(180deg,var(--bg1),var(--bg2));
+  color:#e6f0ff;-webkit-font-smoothing:antialiased;padding:20px;transition:0.3s;
+}
+.wrap{max-width:1200px;margin:20px auto;padding:22px;border-radius:18px;
+      background:rgba(255,255,255,0.03);backdrop-filter:blur(10px);
+      box-shadow:var(--shadow);}
+header{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:18px}
+.brand{display:flex;gap:12px;align-items:center}
+.logo{width:62px;height:62px;border-radius:12px;background:linear-gradient(135deg,var(--accent2),var(--accent1));display:flex;align-items:center;justify-content:center;font-weight:800;font-family:'Space Grotesk';color:white}
+.title{font-family:'Space Grotesk';font-size:22px}
+.lead{color:var(--muted);font-size:13px}
+.btn{padding:10px 14px;border-radius:12px;border:none;background:linear-gradient(90deg,var(--accent1),var(--accent2));color:white;font-weight:600;cursor:pointer;box-shadow:0 8px 30px rgba(6,182,212,0.08);transition:.2s;margin:2px}
+.btn:hover{transform:scale(1.05)}
+.btn.alt{background:linear-gradient(90deg,#ffb86b,#ff6b6b)}
+.searchArea{display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+input[type="search"]{flex:1;padding:12px 14px;border-radius:12px;border:none;background:rgba(255,255,255,0.05);color:#e6f0ff;outline:none;backdrop-filter:blur(4px);}
+.categoryButtons{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.card{position:relative;background:rgba(255,255,255,0.05);padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.03);transition:transform .3s, box-shadow .3s;cursor:pointer;overflow:hidden;backdrop-filter:blur(6px);}
+.card:hover{transform:translateY(-8px);box-shadow:0 0 20px var(--accent1);}
+.card img{width:100%;height:160px;object-fit:cover;border-radius:10px;margin-bottom:8px;transition:transform .3s}
+.card:hover img{transform:scale(1.05);}
+.card .overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.35);opacity:0;transition:.25s;display:flex;align-items:center;justify-content:center;color:white;font-weight:600;font-size:14px;flex-direction:column;text-align:center;padding:10px}
+.card:hover .overlay{opacity:1}
+.heart{position:absolute;top:10px;right:10px;font-size:22px;color:rgba(255,107,129,0.5);cursor:pointer;transition:.25s;z-index:2}
+.heart.fav{color:var(--heart)}
+.modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:linear-gradient(180deg, rgba(2,6,23,0.95), rgba(2,6,23,0.98));padding:24px;z-index:40;overflow:auto}
+.modal.show{display:flex;animation:fadeIn 0.3s ease;}
+@keyframes fadeIn{0%{opacity:0}100%{opacity:1}}
+.modalCard{width:100%;max-width:900px;background:rgba(10,21,46,0.95);padding:20px;border-radius:12px;overflow:auto;max-height:90vh;position:relative;backdrop-filter:blur(6px)}
+.close{position:absolute;right:28px;top:24px;background:transparent;border:1px solid rgba(255,255,255,0.06);color:#cfe9ff;padding:8px;border-radius:10px;cursor:pointer}
+.restaurants{margin-top:15px}
+.restaurants li{margin-bottom:6px;color:#cfe9ff}
+#loadMore{display:block;margin:20px auto;padding:10px 18px;font-size:16px}
+.shimmer{background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%);background-size:200% 100%;animation:shimmer 1.5s infinite; height:180px; border-radius:10px;}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+.dark-mode{background:linear-gradient(180deg,#0a0a12,#121224);color:#fff;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<div class="brand">
+  <div class="logo">NR+</div>
+  <div>
+    <div class="title">NovaRecipes+</div>
+    <div class="lead">Recipes & local recommendations</div>
+  </div>
+</div>
+<div>
+  <button class="btn alt" id="darkToggle">🌙 Dark/Light</button>
+</div>
+</header>
+
+<div class="searchArea">
+<input id="query" type="search" placeholder="Search recipes e.g. Biryani, Pasta..." />
+<button class="btn" id="btnSearch">Search</button>
+<button class="btn alt" id="btnRandom">Random</button>
+<button class="btn" id="btnLocal">Local</button>
+</div>
+
+<div class="categoryButtons">
+<button class="btn" data-cuisine="Indian">🍛 Indian</button>
+<button class="btn" data-cuisine="Italian">🍝 Italian</button>
+<button class="btn" data-cuisine="Mexican">🌮 Mexican</button>
+<button class="btn" data-cuisine="Dessert">🍰 Dessert</button>
+</div>
+
+<div id="recArea" class="grid"></div>
+<button id="loadMore" class="btn">Load More</button>
+</div>
+
+<div id="modal" class="modal">
+<div class="modalCard">
+<button class="close" id="closeModal">Close</button>
+<div id="modalContent"></div>
+</div>
+</div>
+
+<script>
+const SPOON_API_KEY = "c91446dac6994d23ae8f9717f111b789";
+const qInput = document.getElementById('query');
+const btnSearch = document.getElementById('btnSearch');
+const btnRandom = document.getElementById('btnRandom');
+const btnLocal = document.getElementById('btnLocal');
+const recArea = document.getElementById('recArea');
+const modal = document.getElementById('modal');
+const modalContent = document.getElementById('modalContent');
+const closeModal = document.getElementById('closeModal');
+const loadMoreBtn = document.getElementById('loadMore');
+const darkToggle = document.getElementById('darkToggle');
+let favorites = JSON.parse(localStorage.getItem('favRecipes') || '[]');
+let currentList = [];
+let currentIndex = 0;
+const batchSize = 12;
+
+// ---------- Dark Mode Toggle ----------
+darkToggle.onclick = ()=> document.body.classList.toggle('dark-mode');
+
+// ---------- Render Recipes ----------
+function renderRecipes(list, append=false){
+  if(!append) recArea.innerHTML='';
+  if(!list.length){ recArea.innerHTML='<div class="card">No results</div>'; return; }
+  const toShow = list.slice(currentIndex, currentIndex + batchSize);
+  currentIndex += batchSize;
+
+  toShow.forEach(r=>{
+    const card = document.createElement('div'); 
+    card.className='card';
+    card.dataset.id = r.idMeal || r.id;
+    card.innerHTML = `
+      <img src="${r.strMealThumb||r.image||''}" alt="">
+      <div><strong>${r.title || r.strMeal}</strong></div>
+      <div class="overlay">${r.cuisine || r.strArea || '-'} | ${r.category || r.strCategory || '-'}</div>
+      <div class="heart ${favorites.includes(r.idMeal||r.id)?'fav':''}">&#10084;</div>
+    `;
+    const heart = card.querySelector('.heart');
+    heart.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      toggleFav(r.idMeal||r.id, heart);
+    });
+    card.addEventListener('click', ()=> openModal(r));
+    recArea.appendChild(card);
+  });
+  loadMoreBtn.style.display = currentIndex < list.length ? 'block' : 'none';
+}
+
+// ---------- Toggle Favorites ----------
+function toggleFav(id, heartEl){
+  if(favorites.includes(id)) favorites = favorites.filter(x=>x!==id);
+  else favorites.push(id);
+  localStorage.setItem('favRecipes', JSON.stringify(favorites));
+  heartEl.classList.toggle('fav', favorites.includes(id));
+}
+
+// ---------- Open Modal ----------
+async function openModal(recipe){
+  modalContent.innerHTML='Loading...';
+  modal.classList.add('show');
+
+  const ingredients = [];
+  for(let i=1;i<=20;i++){
+    const ing = recipe['strIngredient'+i];
+    const measure = recipe['strMeasure'+i];
+    if(ing && ing.trim()) ingredients.push(`${measure} ${ing}`);
+  }
+
+  modalContent.innerHTML = `
+    <h2>${recipe.title || recipe.strMeal}</h2>
+    <img src="${recipe.image || recipe.strMealThumb}" style="max-width:100%;margin-bottom:12px;border-radius:10px">
+    <p><strong>Category:</strong> ${recipe.category || recipe.strCategory || '-'} | <strong>Cuisine:</strong> ${recipe.cuisine || recipe.strArea || '-'}</p>
+    <h3>Ingredients:</h3>
+    <ul>${ingredients.map(i=>`<li>${i}</li>`).join('')}</ul>
+    <h3>Instructions:</h3>
+    <p>${recipe.instructions || recipe.strInstructions || 'No instructions available'}</p>
+    ${recipe.sourceUrl ? `<h3>Source:</h3><a href="${recipe.sourceUrl}" target="_blank">Link</a>` : ''}
+  `;
+}
+
+closeModal.onclick = ()=> modal.classList.remove('show');
+loadMoreBtn.onclick = ()=> renderRecipes(currentList, true);
+
+// ---------- Fetching Functions ----------
+async function searchRecipes(q){
+  if(!q) return;
+  recArea.innerHTML = Array(batchSize).fill(0).map(_=>`<div class="shimmer"></div>`).join('');
+  currentList = [];
+  currentIndex = 0;
+  try{
+    // --- TheMealDB ---
+    const resMeal = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(q)}`);
+    const dataMeal = await resMeal.json();
+    if(dataMeal.meals) currentList.push(...dataMeal.meals);
+
+    // --- Spoonacular ---
+    const resSpoon = await fetch(`https://api.spoonacular.com/recipes/complexSearch?query=${encodeURIComponent(q)}&number=12&apiKey=${SPOON_API_KEY}`);
+    const dataSpoon = await resSpoon.json();
+    if(dataSpoon.results) currentList.push(...dataSpoon.results);
+
+    renderRecipes(currentList);
+  }catch(err){ recArea.innerHTML='<div class="card">Search error</div>'; console.error(err);}
+}
+
+async function randomRecipes(){
+  recArea.innerHTML = Array(batchSize).fill(0).map(_=>`<div class="shimmer"></div>`).join('');
+  currentList = [];
+  currentIndex = 0;
+  try{
+    for(let i=0;i<12;i++){
+      const res = await fetch('https://www.themealdb.com/api/json/v1/1/random.php');
+      const data = await res.json();
+      if(data.meals) currentList.push(data.meals[0]);
+    }
+    renderRecipes(currentList);
+  }catch(err){ recArea.innerHTML='<div class="card">Random error</div>'; console.error(err);}
+}
+
+async function localRecipes(){
+  recArea.innerHTML = Array(batchSize).fill(0).map(_=>`<div class="shimmer"></div>`).join('');
+  currentList = [];
+  currentIndex = 0;
+  try{
+    const res = await fetch('https://www.themealdb.com/api/json/v1/1/filter.php?a=Indian');
+    const data = await res.json();
+    const detailed = [];
+    for(const m of data.meals || []){
+      const d = await fetch(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${m.idMeal}`);
+      const dt = await d.json();
+      if(dt.meals) detailed.push(dt.meals[0]);
+    }
+    currentList.push(...detailed);
+    renderRecipes(currentList);
+  }catch(err){ recArea.innerHTML='<div class="card">Error fetching local recipes</div>'; console.error(err);}
+}
+
+// ---------- Event Listeners ----------
+btnSearch.onclick = ()=> searchRecipes(qInput.value);
+btnRandom.onclick = ()=> randomRecipes();
+btnLocal.onclick = ()=> localRecipes();
+
+document.querySelectorAll('.categoryButtons .btn').forEach(btn=>{
+  btn.addEventListener('click', async ()=>{
+    const cuisine = btn.getAttribute('data-cuisine');
+    recArea.innerHTML = Array(batchSize).fill(0).map(_=>`<div class="shimmer"></div>`).join('');
+    currentList = [];
+    currentIndex = 0;
+    try{
+      const resMeal = await fetch(`https://www.themealdb.com/api/json/v1/1/filter.php?a=${cuisine}`);
+      const dataMeal = await resMeal.json();
+      const detailed = [];
+      for(const m of dataMeal.meals || []) {
+        const dt = await fetch(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${m.idMeal}`);
+        const dtData = await dt.json();
+        if(dtData.meals) detailed.push(dtData.meals[0]);
+      }
+      currentList.push(...detailed);
+
+      // Spoonacular category search
+      const resSpoon = await fetch(`https://api.spoonacular.com/recipes/complexSearch?cuisine=${encodeURIComponent(cuisine)}&number=12&apiKey=${SPOON_API_KEY}`);
+      const dataSpoon = await resSpoon.json();
+      if(dataSpoon.results) currentList.push(...dataSpoon.results);
+
+      renderRecipes(currentList);
+    }catch(err){ recArea.innerHTML='<div class="card">Error fetching cuisine</div>'; console.error(err);}
+  });
+});
+</script>
+</body>
+</html>
